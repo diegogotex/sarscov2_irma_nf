@@ -12,7 +12,7 @@ process IRMA {
     maxForks 1 //faz com que o processo seja executado para um arquivo por vez
                //se remover ele pegar o máximo de arquivos suportados pelo script
     input:
-    tuple val(id), path(fastq) //tupla é a forma re recuperar os valores distintos dentro do array
+    tuple val(id), path(fastq) //tupla é a forma de recuperar os valores distintos dentro do array
 
     output:
     path "${id}/SARS-CoV-2.fasta" //o ID é o nome da pasta de saída do IRMA
@@ -34,12 +34,11 @@ process RENAME_FASTA {
     output:
     path "${id}/${id}.fasta"
 
-    bash:
+    script:
     """
     cp ${id}/SARS-CoV-2.fasta ${id}/${id}.fasta
 
-    awk '/^>/{print ">" substr(FILENAME,1,length(FILENAME)-6); next} 1' *.fasta
-    
+    awk '/^>/{print ">" substr(FILENAME,1,length(FILENAME)-6); next} 1' ${id}/${id}.fasta > ${id}/${id}_final.fasta
     """
 
 }
@@ -58,7 +57,7 @@ collect para esperar os outros processos rodarem antes de executar esse
 workflow {
 
     irma_ch = IRMA(amostra)
-    rename_ch = RENAME_FASTA(irma_ch)
+    //rename_ch = RENAME_FASTA(irma_ch)
     //IRMA(amostra)
     //RENAME_FASTA(IRMA.out)
 
