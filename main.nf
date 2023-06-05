@@ -2,7 +2,7 @@
 * Parâmetros
 */
 params.dir =  './**{R1_001,R2_001}.fastq.gz'
-params.outdir = "results"
+params.outdir = "$baseDir/results"
 
 amostra = Channel
     .fromFilePairs(params.dir)
@@ -36,32 +36,60 @@ process RENAME_FASTA {
     tuple val(id), path(fasta)
 
     output:
-    path("${fasta}/${id}.fasta")
+    path("${fasta}/${id}_final.fasta")
 
     script:
     """
     cp ${fasta}/SARS-CoV-2.fasta ${fasta}/${id}.fasta
 
-    sed 's/SARS-CoV-2/${id}/' ${fasta}/SARS-CoV-2.fasta > ${fasta}/${id}.fasta
+    sed 's/SARS-CoV-2/${id}/' ${fasta}/SARS-CoV-2.fasta > ${fasta}/${id}_final.fasta
     
     """
 
 }
 
-/*
-process PANGO {
+
+process CONCAT {
+    publishDir params.outdir, mode:'copy'
+
+    input:
+    path fasta
+
+    output:
+    path 'samples.fasta'
+
+    script
+    """
+    cat $fasta > samples.fasta
+    """
 
 }
-*/
+
+
+process PANGO {
+    publishDir params.outdir, mode:'copy'
+
+    input:
+    fasta
+
+    //output:
+
+    script:
+    """
+    pangolin fasta
+    """
+
+}
 
 //
 workflow {
 
     irma_ch = IRMA(amostra)
     rename_ch = RENAME_FASTA(irma_ch)
-    
     //IRMA(amostra)
     //RENAME_FASTA(IRMA.out)
+
+    //pango_ch = PANGO(rename_ch.collect())
 
 }
 
