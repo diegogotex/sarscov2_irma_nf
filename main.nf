@@ -2,6 +2,7 @@
 * Parâmetros
 */
 params.dir =  './**{R1_001,R2_001}.fastq.gz'
+params.outdir = "results"
 
 amostra = Channel
     .fromFilePairs(params.dir)
@@ -15,49 +16,50 @@ process IRMA {
     tuple val(id), path(fastq) //tupla é a forma de recuperar os valores distintos dentro do array
 
     output:
-    path "${id}/SARS-CoV-2.fasta" //o ID é o nome da pasta de saída do IRMA
-
+    //path "${id}/SARS-CoV-2.fasta" //o ID é o nome da pasta de saída do IRMA
+    tuple val(id), path ("$id")
+    
     script:
     """
-    IRMA CoV ${fastq[0]} ${fastq[1]} ${id}
+    IRMA CoV ${fastq[0]} ${fastq[1]} $id
     """
 
 }
-
 
 //renomeando o arquivo fasta e o cabecalho
 process RENAME_FASTA {
+    publishDir params.outdir, mode:'copy'
+
+    debug true //imprime a saída na tela
 
     input:
-    path irma_out
+    tuple val(id), path(fasta)
 
     output:
-    path "${id}/${id}.fasta"
+    path("${fasta}/${id}.fasta")
 
     script:
     """
-    cp ${id}/SARS-CoV-2.fasta ${id}/${id}.fasta
+    cp ${fasta}/SARS-CoV-2.fasta ${fasta}/${id}.fasta
 
-    awk '/^>/{print ">" substr(FILENAME,1,length(FILENAME)-6); next} 1' ${id}/${id}.fasta > ${id}/${id}_final.fasta
+    sed 's/SARS-CoV-2/${id}/' ${fasta}/SARS-CoV-2.fasta > ${fasta}/${id}.fasta
+    
     """
 
 }
-
 
 /*
 process PANGO {
 
-collect para esperar os outros processos rodarem antes de executar esse
-
 }
 */
-
 
 //
 workflow {
 
     irma_ch = IRMA(amostra)
-    //rename_ch = RENAME_FASTA(irma_ch)
+    rename_ch = RENAME_FASTA(irma_ch)
+    
     //IRMA(amostra)
     //RENAME_FASTA(IRMA.out)
 
