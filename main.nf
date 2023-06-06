@@ -1,8 +1,10 @@
+#!/usr/bin/env nextflow
+
 /*
 * Parâmetros
 */
 params.dir =  './**{R1_001,R2_001}.fastq.gz'
-params.outdir = "$baseDir/results"
+params.outdir = "$baseDir/fasta_out"
 
 amostra = Channel
     .fromFilePairs(params.dir)
@@ -36,14 +38,12 @@ process RENAME_FASTA {
     tuple val(id), path(fasta)
 
     output:
-    path("${fasta}/${id}_final.fasta")
+    path("${fasta}/${id}.fasta")
+    //path("${id}.fasta")
 
     script:
     """
-    cp ${fasta}/SARS-CoV-2.fasta ${fasta}/${id}.fasta
-
-    sed 's/SARS-CoV-2/${id}/' ${fasta}/SARS-CoV-2.fasta > ${fasta}/${id}_final.fasta
-    
+    sed 's/SARS-CoV-2/${id}/' ${fasta}/SARS-CoV-2.fasta > ${fasta}/${id}.fasta
     """
 
 }
@@ -58,7 +58,7 @@ process CONCAT {
     output:
     path 'samples.fasta'
 
-    script
+    script:
     """
     cat $fasta > samples.fasta
     """
@@ -67,16 +67,19 @@ process CONCAT {
 
 
 process PANGO {
+    debug true
+
     publishDir params.outdir, mode:'copy'
 
     input:
-    fasta
+    path 'fasta_all'
 
-    //output:
+    output:
+    path "lineage_report.csv"
 
     script:
     """
-    pangolin fasta
+    pangolin $fasta_all --outfile lineage_report.csv
     """
 
 }
@@ -88,9 +91,8 @@ workflow {
     rename_ch = RENAME_FASTA(irma_ch)
     //IRMA(amostra)
     //RENAME_FASTA(IRMA.out)
-
-    //pango_ch = PANGO(rename_ch.collect())
-
+    concat_ch = CONCAT(rename_ch.collect())
+    PANGO(concat_ch)
 }
 
 
