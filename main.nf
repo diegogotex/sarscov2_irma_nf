@@ -5,7 +5,7 @@
 */
 //params.dir =  '$projectDir/**{R1_001,R2_001}.fastq.gz'
 params.dir =  './**{R1_001,R2_001}.fastq.gz'
-params.outdir = "$baseDir/fasta_out"
+params.outdir = "fasta_out"
 
 amostra = Channel
     .fromFilePairs(params.dir)
