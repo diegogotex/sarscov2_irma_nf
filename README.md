@@ -6,9 +6,5 @@ Dependências:
 Docker
 Nextflow
 
-#executando com dataset de teste.
+#executando com dataset de teste.\n
 nextflow run diegogotex/sarscov2_irma_nf 
-
-#executando com dataset local.
-nextflow run diegogotex/sarscov2_irma_nf -r main --dir <diretorio_com_reads>
-#as reads podem estar armazenadas diretamente no diretório ou em subdiretórios.
