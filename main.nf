@@ -4,12 +4,29 @@
 * Parâmetros
 */
 //params.dir =  '$projectDir/**{R1_001,R2_001}.fastq.gz'
-params.dir =  './**{R1_001,R2_001}.fastq.gz'
+//params.dir =  './**{R1_001,R2_001}.fastq.gz'
+params.dir = 'VIGILANCIA_07_22_01-358156824/**{R1_001,R2_001}.fastq.gz'
 params.outdir = "fasta_out"
 
 amostra = Channel
     .fromFilePairs(params.dir)
     //.view(amostra -> "->${amostra[0]}\n${amostra[1][0]}\n${amostra[1][1]}")
+
+log.info """\
+
+
+            SARS-CoV-2: IRMA & PANGOLIN - NF   PIPELINE
+    =============================================================
+    
+    input dir    : ${params.dir}
+    output dir   : ${params.outdir}
+
+    =============================================================
+
+    """
+    .stripIndent()
+
+
 
 //mapeando as reads com o IRMA
 process IRMA {
@@ -31,7 +48,8 @@ process IRMA {
 
 //renomeando o arquivo fasta e o cabecalho
 process RENAME_FASTA {
-    publishDir params.outdir, mode:'copy'
+    publishDir params.outdir, mode:'copy' //copiando os arquivos de saída do script para
+                                          // o diretório definido em params.outdir
 
     debug true //imprime a saída na tela
 
@@ -49,7 +67,7 @@ process RENAME_FASTA {
 
 }
 
-
+//concatenando todos os arquivos .fasta em um único fasta
 process CONCAT {
     publishDir params.outdir, mode:'copy'
 
@@ -66,9 +84,9 @@ process CONCAT {
 
 }
 
-
+//classificando as linhagens com o pangolin
 process PANGO {
-    debug true
+    //debug true
 
     publishDir params.outdir, mode:'copy'
 
@@ -90,8 +108,6 @@ workflow {
 
     irma_ch = IRMA(amostra)
     rename_ch = RENAME_FASTA(irma_ch)
-    //IRMA(amostra)
-    //RENAME_FASTA(IRMA.out)
     concat_ch = CONCAT(rename_ch.collect())
     PANGO(concat_ch)
 }
